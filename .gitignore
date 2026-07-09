@@ -1,0 +1,13 @@
+# Données (trop lourdes pour GitHub)
+data/
+models/
+
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environnement
+.env
