@@ -11,3 +11,7 @@ __pycache__/
 
 # Environnement
 .env
+
+# Streaming runtime
+predictions.db
+predictions.db-journal
