@@ -29,6 +29,28 @@ Le score parfait obtenu en split aléatoire est trompeur : il reflète la mémor
 - `02_baseline_models.ipynb` — modèles supervisés (Logistic Regression, Random Forest, XGBoost) et analyse critique du score parfait
 - `03_temporal_split.ipynb` — réévaluation XGBoost avec un découpage temporel (par jour) révélant l'effondrement du score sur attaques inédites
 - `04_anomaly_detection.ipynb` — détection non-supervisée (Isolation Forest) apprenant la normalité, plus robuste face aux attaques inédites
+- `streaming/docker-compose.yml` — infrastructure Kafka (mode KRaft)
+- `streaming/producer.py` — rejoue les flux CICIDS2017 dans Kafka (JSON)
+- `streaming/consumer.py` — scoring temps réel, persistance SQLite
+- `streaming/dashboard.py` — dashboard Streamlit (métriques live)
+
+## Pipeline temps réel
+
+Le pipeline analyse les flux réseau au fil de leur arrivée : chaque flux est
+scoré par le modèle Random Forest dès réception, puis les résultats sont
+affichés sur un dashboard live.
+
+Le flux est simulé : un producer rejoue le dataset CICIDS2017 ligne par ligne
+(une ligne toutes les 10 ms, configurable) pour reproduire l'arrivée continue
+de trafic. En production, la source serait une sonde réseau alimentée par un
+outil type CICFlowMeter.
+
+producer.py → Kafka (network-flows) → consumer.py (scoring) → SQLite → dashboard
+
+- **Kafka 3.9 en mode KRaft** (sans ZooKeeper), topic à 3 partitions
+- **Consumer** : charge le modèle sérialisé avec joblib — l'entraînement
+  (notebooks) et l'inférence (streaming) sont ainsi découplés
+- **Dashboard Streamlit** : métriques live, répartition des attaques détectées
 
 ## Limites et travaux futurs
 
@@ -38,10 +60,10 @@ Le score parfait obtenu en split aléatoire est trompeur : il reflète la mémor
 - Isolation Forest : precision faible, non déployable seul
 
 **Travaux futurs :**
-- Détection temps réel (Kafka + Spark Streaming)
-- Déploiement conteneurisé (Docker + k3s)
+- Conteneurisation complète du pipeline (Docker) et déploiement k3s
+- Agrégations sur fenêtres temporelles via Spark Structured Streaming
 - Mapping MITRE ATT&CK
 
 ## Stack technique
 
-Python · pandas · NumPy · scikit-learn · XGBoost · Jupyter · Parquet
+Python · pandas · NumPy · scikit-learn · XGBoost · Parquet · Apache Kafka · Docker · Streamlit · SQLite · Jupyter
