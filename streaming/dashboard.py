@@ -2,11 +2,14 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 from streamlit_autorefresh import st_autorefresh
+import os
+
+DB_PATH = os.getenv("DB_PATH", "predictions.db")
 
 
 st.title("NIDS — Détection d'intrusion en temps réel")
 
-conn = sqlite3.connect("predictions.db")
+conn = sqlite3.connect(DB_PATH)
 df = pd.read_sql("SELECT * FROM predictions", conn)
 conn.close()
 

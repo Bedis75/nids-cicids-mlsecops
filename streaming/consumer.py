@@ -4,10 +4,12 @@ import joblib
 import json
 import sqlite3
 from datetime import datetime
+import os
 
+KAFKA_SERVER = os.getenv("KAFKA_SERVER", "localhost:29092")
+DB_PATH = os.getenv("DB_PATH", "predictions.db")
 
-
-conn = sqlite3.connect("predictions.db")
+conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 cursor.execute("""
     CREATE TABLE IF NOT EXISTS predictions (
@@ -24,7 +26,7 @@ model = joblib.load("rf_model.pkl")
 
 consumer = KafkaConsumer(
     "network-flows",
-    bootstrap_servers="localhost:9092",
+    bootstrap_servers=KAFKA_SERVER,
     value_deserializer=lambda v: json.loads(v.decode('utf-8')),
     auto_offset_reset='earliest'
 )
