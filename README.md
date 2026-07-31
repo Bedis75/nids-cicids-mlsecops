@@ -80,16 +80,42 @@ kubectl apply -f k8s/       # Kubernetes
   base de prédictions
 - **Exposition** : le dashboard est accessible via un Service NodePort
 
+## Mapping MITRE ATT&CK
+
+Les étiquettes du dataset (DoS Hulk, PortScan, FTP-Patator) sont propres à
+CICIDS2017. Les traduire en identifiants MITRE ATT&CK les relie au vocabulaire
+opérationnel de la sécurité.
+
+Chaque détection se situe alors dans une étape connue du cycle d'attaque, avec
+ses mitigations documentées — un analyste sait immédiatement à quelle phase
+il fait face.
+
+| Classe CICIDS2017 | Tactique ATT&CK | Technique |
+|-------------------|-----------------|-----------|
+| PortScan | Reconnaissance (TA0043) | T1046 — Network Service Discovery |
+| FTP-Patator, SSH-Patator | Credential Access (TA0006) | T1110.001 — Password Guessing |
+| Web Attack (SQLi, XSS, Brute Force) | Initial Access (TA0001) | T1190 — Exploit Public-Facing Application |
+| Infiltration | Lateral Movement (TA0008) | T1021 — Remote Services |
+| Bot | Command and Control (TA0011) | T1071 — Application Layer Protocol |
+| DoS Hulk, GoldenEye, slowloris, Slowhttptest | Impact (TA0040) | T1499 — Endpoint Denial of Service |
+| DDoS | Impact (TA0040) | T1498 — Network Denial of Service |
+| Heartbleed | Credential Access (TA0006) | T1040 — Network Sniffing |
+
 ## Limites et travaux futurs
 
 **Limites :**
+
 - Entraînement sur échantillon (300k lignes) pour RF/XGBoost — contrainte mémoire
 - Split temporel très sévère (types d'attaques disjoints train/test)
 - Isolation Forest : precision faible, non déployable seul
 
 **Travaux futurs :**
+
 - Agrégations sur fenêtres temporelles via Spark Structured Streaming
-- Mapping MITRE ATT&CK
+  (taux d'attaques par intervalle, pics par port) pour capter des patterns
+  invisibles au niveau du flux isolé
+- Durcissement des conteneurs : exécution en utilisateur non-privilégié
+- Réentraînement périodique du modèle et versionnement des artefacts
 
 ## Stack technique
 
