@@ -33,6 +33,11 @@ Le score parfait obtenu en split aléatoire est trompeur : il reflète la mémor
 - `streaming/producer.py` — rejoue les flux CICIDS2017 dans Kafka (JSON)
 - `streaming/consumer.py` — scoring temps réel, persistance SQLite
 - `streaming/dashboard.py` — dashboard Streamlit (métriques live)
+- `k8s/kafka.yaml` — Deployment et Service Kafka
+- `k8s/producer.yaml` — Deployment du producer
+- `k8s/consumer.yaml` — Deployment du consumer (volume partagé)
+- `k8s/dashboard.yaml` — Deployment et Service NodePort du dashboard
+- `k8s/storage.yaml` — PersistentVolumeClaim pour la base de prédictions
 
 ## Pipeline temps réel
 
@@ -45,12 +50,35 @@ Le flux est simulé : un producer rejoue le dataset CICIDS2017 ligne par ligne
 de trafic. En production, la source serait une sonde réseau alimentée par un
 outil type CICFlowMeter.
 
-producer.py → Kafka (network-flows) → consumer.py (scoring) → SQLite → dashboard
+```producer.py → Kafka (network-flows) → consumer.py (scoring) → SQLite → dashboard```
 
 - **Kafka 3.9 en mode KRaft** (sans ZooKeeper), topic à 3 partitions
 - **Consumer** : charge le modèle sérialisé avec joblib — l'entraînement
   (notebooks) et l'inférence (streaming) sont ainsi découplés
 - **Dashboard Streamlit** : métriques live, répartition des attaques détectées
+
+## Déploiement
+
+Le déploiement se fait à deux niveaux. Chaque composant (producer, consumer,
+dashboard) est conteneurisé via son propre Dockerfile. Docker Compose orchestre
+l'ensemble pour le développement local ; Kubernetes prend le relais pour
+l'orchestration.
+
+Lancement en une commande :
+
+```
+docker compose up -d        # Docker Compose
+kubectl apply -f k8s/       # Kubernetes
+```
+
+- **Configuration externalisée** : adresse Kafka, chemins de fichiers et taille
+  d'échantillon passent par variables d'environnement — le même code tourne en
+  local, en Compose et en Kubernetes
+- **Modèle et données embarqués dans les images** : garantit qu'une image donnée
+  contient exactement le modèle avec lequel elle a été construite
+- **Volume partagé** (PersistentVolumeClaim) entre consumer et dashboard pour la
+  base de prédictions
+- **Exposition** : le dashboard est accessible via un Service NodePort
 
 ## Limites et travaux futurs
 
@@ -60,10 +88,9 @@ producer.py → Kafka (network-flows) → consumer.py (scoring) → SQLite → d
 - Isolation Forest : precision faible, non déployable seul
 
 **Travaux futurs :**
-- Conteneurisation complète du pipeline (Docker) et déploiement k3s
 - Agrégations sur fenêtres temporelles via Spark Structured Streaming
 - Mapping MITRE ATT&CK
 
 ## Stack technique
 
-Python · pandas · NumPy · scikit-learn · XGBoost · Parquet · Apache Kafka · Docker · Streamlit · SQLite · Jupyter
+Python · pandas · NumPy · scikit-learn · XGBoost · Parquet · Apache Kafka · Docker · Kubernetes · Streamlit · SQLite · Jupyter
